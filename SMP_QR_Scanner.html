@@ -208,34 +208,31 @@ async function onScanSuccess(decodedText){
 
   // Kembali ke halaman redeem dengan parameter voucher.
   // URL halaman redeem disimpan sebagai parameter "return".
-  const params = new URLSearchParams(window.location.search);
-  const returnUrl = params.get('return');
+  // Kirim HANYA voucher code ke halaman Web App yang membuka scanner.
+  // Scanner tidak menerima atau mengirim nomor HP/customer.
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage({
+      type: 'SMP_VOUCHER_SCANNED',
+      voucher: code
+    }, '*');
 
-  if(!returnUrl){
     setStatus(
-      'QR berhasil dibaca: ' + code +
-      '. Halaman redeem belum diberikan pada parameter return.',
+      'QR berhasil dibaca: ' + code + '. Mengirim kode ke Web App...',
       'success'
     );
+
+    setTimeout(function(){
+      try { window.close(); } catch(e) {}
+    }, 500);
     return;
   }
 
-  let target;
-
-  try{
-    target = new URL(returnUrl);
-  }catch(e){
-    setStatus(
-      'Alamat halaman redeem tidak valid.',
-      'error'
-    );
-    return;
-  }
-
-  // Hanya kirim voucher code.
-  target.searchParams.set('voucher', code);
-
-  window.location.href = target.toString();
+  // Fallback jika scanner dibuka langsung tanpa Web App.
+  setStatus(
+    'QR berhasil dibaca: ' + code +
+    '. Scanner dibuka langsung, jadi tidak ada Web App tujuan.',
+    'success'
+  );
 }
 </script>
 
